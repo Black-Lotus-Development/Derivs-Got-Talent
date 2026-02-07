@@ -174,6 +174,9 @@ export default function DeploymentScreen({ route, navigation }) {
         {/* Live Chart */}
         <LiveChart data={marketData} />
 
+        {/* Analyst Commentary (Judges Table) */}
+        <AnalystPanel comments={analystComments} />
+
         {/* System Health Status */}
         <SystemHealth strategies={strategies} damage={vibe} />
 
@@ -200,9 +203,6 @@ export default function DeploymentScreen({ route, navigation }) {
             ))}
           </Animated.View>
         )}
-
-        {/* Analyst Commentary */}
-        <AnalystPanel comments={analystComments} />
 
         {/* End Deployment */}
         <View style={styles.endSection}>

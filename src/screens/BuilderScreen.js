@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Pressable, ScrollView, Platform, Share } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView, Platform } from 'react-native';
 import { TextInput, Portal, Modal, Snackbar, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BlockPalette from '../components/BlockPalette';
 import SystemArchitecture from '../components/SystemArchitecture';
 import SystemArchitecture3D from '../components/SystemArchitecture3D';
 import ParamEditor from '../components/ParamEditor';
-import { saveStrategy, loadLastStrategy } from '../api/storage';
-import { exportToDerivBotXML, getExportFilename } from '../api/deriv/xmlExporter';
+import { loadLastStrategy } from '../api/storage';
 import { colors, spacing, radius, typography, shadows, blockCategoryMeta } from '../theme';
 
 export default function BuilderScreen({ navigation, route }) {
@@ -16,6 +15,7 @@ export default function BuilderScreen({ navigation, route }) {
   const [show3D, setShow3D] = useState(false);
   const [editingParam, setEditingParam] = useState(null);
   const [snackMessage, setSnackMessage] = useState('');
+  const [routineCollapsed, setRoutineCollapsed] = useState(true);
 
   const blurActiveElement = useCallback(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -107,41 +107,7 @@ export default function BuilderScreen({ navigation, route }) {
     setEditingParam(null);
   }, [editingParam]);
 
-  const handleSave = async () => {
-    const strategy = { name: strategyName, blocks, timestamp: Date.now() };
-    const ok = await saveStrategy(strategy);
-    setSnackMessage(ok ? 'BLUEPRINT ARCHIVED' : 'SYNC ERROR');
-  };
 
-  const handleExportXML = useCallback(async () => {
-    if (blocks.length === 0) return;
-
-    try {
-      const xml = exportToDerivBotXML(blocks, strategyName);
-      const filename = getExportFilename(strategyName);
-
-      if (Platform.OS === 'web') {
-        // Download as file on web
-        const blob = new Blob([xml], { type: 'application/xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        setSnackMessage('EXPORTED TO DERIV BOT');
-      } else {
-        // Share on native
-        await Share.share({
-          message: xml,
-          title: filename,
-        });
-        setSnackMessage('EXPORTED TO DERIV BOT');
-      }
-    } catch (err) {
-      setSnackMessage('EXPORT FAILED');
-    }
-  }, [blocks, strategyName]);
 
   const entryCount = blocks.filter((b) => b.category === 'entry').length;
   const defenseCount = blocks.filter((b) => b.category === 'defense').length;
@@ -159,20 +125,6 @@ export default function BuilderScreen({ navigation, route }) {
             <Text style={styles.headerTitle}>The Workshop</Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable onPress={handleExportXML} style={styles.headerAction} disabled={blocks.length === 0}>
-              <MaterialCommunityIcons
-                name="robot-outline"
-                size={22}
-                color={blocks.length === 0 ? colors.textMuted : colors.success}
-              />
-            </Pressable>
-            <Pressable onPress={handleSave} style={styles.headerAction} disabled={blocks.length === 0}>
-              <MaterialCommunityIcons
-                name="heart-outline"
-                size={22}
-                color={blocks.length === 0 ? colors.textMuted : colors.primary}
-              />
-            </Pressable>
             <Pressable
               onPress={() => setShow3D(true)}
               style={styles.headerAction}
@@ -218,53 +170,74 @@ export default function BuilderScreen({ navigation, route }) {
         </View>
       </View>
 
-      {/* Block Palette */}
-      <BlockPalette onBlockSelect={handleBlockSelect} />
+      {/* Main Content Area: Block Palette takes precedence */}
+      <View style={styles.mainContent}>
+        <BlockPalette onBlockSelect={handleBlockSelect} />
+      </View>
 
-      {/* Routine Preview + Open Button */}
-      <ScrollView style={styles.routinePreviewScroll} contentContainerStyle={styles.routinePreviewContent}>
-        {blocks.length === 0 ? (
-          <View style={styles.emptyRoutine}>
-            <MaterialCommunityIcons name="puzzle-outline" size={36} color={colors.textMuted} />
-            <Text style={styles.emptyRoutineTitle}>No pieces yet</Text>
-            <Text style={styles.emptyRoutineText}>
-              Add talent modules from the toolkit above to start composing your routine.
-            </Text>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => navigation.navigate('Routine', { blocks, strategyName })}
-            style={({ pressed }) => [styles.routineCard, pressed && { transform: [{ scale: 0.98 }] }]}
-          >
-            <View style={styles.routineCardHeader}>
-              <MaterialCommunityIcons name="playlist-star" size={20} color={colors.primary} />
-              <Text style={styles.routineCardTitle}>Your Routine</Text>
-              <View style={styles.routineBadge}>
-                <Text style={styles.routineBadgeText}>{blocks.length} pieces</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
+      {/* Collapsible Routine Section */}
+      <View style={[styles.routineDrawer, !routineCollapsed && styles.routineDrawerExpanded]}>
+        <Pressable
+          style={styles.routineHeader}
+          onPress={() => setRoutineCollapsed(!routineCollapsed)}
+        >
+          <View style={styles.routineHeaderLeft}>
+            <MaterialCommunityIcons name="playlist-star" size={20} color={colors.primary} />
+            <Text style={styles.routineHeaderTitle}>Your Routine</Text>
+            <View style={styles.routineBadge}>
+              <Text style={styles.routineBadgeText}>{blocks.length}</Text>
             </View>
-            <View style={styles.miniPieces}>
+          </View>
+          <MaterialCommunityIcons
+            name={routineCollapsed ? "chevron-up" : "chevron-down"}
+            size={24}
+            color={colors.textMuted}
+          />
+        </Pressable>
+
+        <View style={styles.routineContent}>
+          {blocks.length === 0 ? (
+            <View style={styles.emptyRoutine}>
+              <Text style={styles.emptyRoutineTitle}>No pieces yet</Text>
+              <Text style={styles.emptyRoutineText}>Select tools from above</Text>
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.routineScroll}
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.routineScrollContent}
+            >
               {blocks.map((block, i) => {
                 const meta = blockCategoryMeta[block.category] || blockCategoryMeta.entry;
                 return (
-                  <View key={block.instanceId} style={styles.miniPieceRow}>
-                    <View style={[styles.miniPieceDot, { backgroundColor: meta.color }]} />
-                    <Text style={styles.miniPieceName} numberOfLines={1}>{block.name}</Text>
-                    {i < blocks.length - 1 && (
-                      <View style={[styles.miniConnector, { borderColor: meta.color + '40' }]} />
-                    )}
+                  <View key={block.instanceId} style={styles.routinePieceChip}>
+                    <View style={[styles.routinePieceDot, { backgroundColor: meta.color }]} />
+                    <Text style={styles.routinePieceName} numberOfLines={1}>{block.name}</Text>
+                    <Pressable
+                      onPress={() => handleRemoveBlock(i)}
+                      style={styles.routinePieceRemove}
+                      hitSlop={8}
+                    >
+                      <MaterialCommunityIcons name="close-circle" size={18} color={colors.danger} />
+                    </Pressable>
                   </View>
                 );
               })}
-            </View>
-            <View style={styles.routineCardFooter}>
-              <MaterialCommunityIcons name="puzzle-edit-outline" size={16} color={colors.primary} />
-              <Text style={styles.routineCardFooterText}>Tap to arrange and edit pieces</Text>
-            </View>
-          </Pressable>
-        )}
-      </ScrollView>
+            </ScrollView>
+          )}
+
+          {!routineCollapsed && blocks.length > 0 && (
+            <Pressable
+              onPress={() => navigation.navigate('Routine', { blocks, strategyName })}
+              style={styles.openStudioBtn}
+            >
+              <Text style={styles.openStudioText}>Open Studio View</Text>
+              <MaterialCommunityIcons name="arrow-expand" size={16} color="#FFF" />
+            </Pressable>
+          )}
+        </View>
+      </View>
 
       {/* System Architecture Preview Modal */}
       <Portal>
@@ -391,53 +364,47 @@ const styles = StyleSheet.create({
   statText: {
     ...typography.bodyBold,
   },
-  routinePreviewScroll: {
+  mainContent: {
     flex: 1,
   },
-  routinePreviewContent: {
-    padding: spacing.lg,
-    paddingBottom: 120,
-  },
-  emptyRoutine: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxxl,
-    gap: spacing.sm,
-  },
-  emptyRoutineTitle: {
-    ...typography.h3,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-  },
-  emptyRoutineText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 260,
-  },
-  routineCard: {
+  routineDrawer: {
     backgroundColor: colors.gameSurface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.gameBorder,
+    borderTopWidth: 1,
+    borderTopColor: colors.gameBorder,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     overflow: 'hidden',
+    position: 'absolute', // Make it overlay or stick to bottom? Let's stick it at bottom of flex container by not making it absolute, but it needs to collapse.
+    // Actually, making it absolute or just last child with standard flow?
+    // Let's use standard flow but control height
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    ...shadows.elevated,
   },
-  routineCardHeader: {
+  routineDrawerExpanded: {
+    height: 200, // or some max height
+  },
+  routineHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
     padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gameBorder,
+    backgroundColor: colors.gameSurface, // ensure opacity covers content behind
   },
-  routineCardTitle: {
+  routineHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  routineHeaderTitle: {
     ...typography.h3,
     color: '#FFF',
-    flex: 1,
   },
   routineBadge: {
     backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: radius.round,
   },
@@ -445,45 +412,107 @@ const styles = StyleSheet.create({
     ...typography.micro,
     color: '#FFF',
   },
-  miniPieces: {
-    padding: spacing.lg,
-    gap: spacing.sm,
+  routineContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  miniPieceRow: {
-    flexDirection: 'row',
+  emptyRoutine: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    gap: 4,
+  },
+  emptyRoutineTitle: {
+    ...typography.bodyBold,
+    color: colors.textMuted,
+  },
+  emptyRoutineText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    opacity: 0.7,
+  },
+  routineScroll: {
+    maxHeight: 60,
+  },
+  routineScrollContent: {
     alignItems: 'center',
     gap: spacing.sm,
   },
-  miniPieceDot: {
+  routinePreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.gameBg,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  routinePieceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.gameBg,
+    paddingVertical: spacing.sm,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.xs,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  routinePieceDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
   },
-  miniPieceName: {
-    ...typography.bodyBold,
-    color: colors.textMuted,
-    flex: 1,
+  routinePieceName: {
+    ...typography.caption,
+    color: '#FFF',
+    maxWidth: 80,
   },
-  miniConnector: {
-    position: 'absolute',
-    left: 4,
-    top: 14,
-    width: 1,
-    height: 16,
-    borderLeftWidth: 2,
-    borderStyle: 'dashed',
+  routinePieceRemove: {
+    padding: 2,
   },
-  routineCardFooter: {
+  miniPieces: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  miniPieceItem: {
+    width: 12,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  miniPieceDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  editOverlay: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    gap: 4,
+    paddingLeft: spacing.sm,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(255,255,255,0.1)',
   },
-  routineCardFooterText: {
-    ...typography.micro,
+  editText: {
+    ...typography.caption,
     color: colors.gameAccent,
+  },
+  openStudioBtn: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+  },
+  openStudioText: {
+    ...typography.bodyBold,
+    color: '#FFF',
   },
   fab: {
     position: 'absolute',

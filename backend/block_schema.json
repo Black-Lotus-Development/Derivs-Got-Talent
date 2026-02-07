@@ -1,0 +1,58 @@
+[
+  {
+    "id": "rsi-gate",
+    "name": "RSI Momentum",
+    "category": "entry",
+    "icon": "chart-bell-curve-cumulative",
+    "description": "Execute when RSI crosses threshold",
+    "params": { "threshold": 30 }
+  },
+  {
+    "id": "ma-cross",
+    "name": "MA Crossover",
+    "category": "entry",
+    "icon": "chart-line-variant",
+    "description": "Signal on moving average intersection",
+    "params": { "fast": 9, "slow": 21 }
+  },
+  {
+    "id": "macd-signal",
+    "name": "MACD Divergence",
+    "category": "entry",
+    "icon": "waves",
+    "description": "Detect trend reversals via MACD",
+    "params": { "fast": 12, "slow": 26, "signal": 9 }
+  },
+  {
+    "id": "stop-loss",
+    "name": "Fixed Stop-Loss",
+    "category": "defense",
+    "icon": "shield-off-outline",
+    "description": "Terminate position at risk threshold",
+    "params": { "percentage": 2 }
+  },
+  {
+    "id": "take-profit",
+    "name": "Profit Target",
+    "category": "defense",
+    "icon": "currency-usd-circle-outline",
+    "description": "Liquidate at target gain percentage",
+    "params": { "percentage": 5 }
+  },
+  {
+    "id": "trailing-stop",
+    "name": "Trailing Guardian",
+    "category": "defense",
+    "icon": "shield-sync-outline",
+    "description": "Dynamic exit following price peak",
+    "params": { "percentage": 3 }
+  },
+  {
+    "id": "position-size",
+    "name": "Capital Allocator",
+    "category": "sizing",
+    "icon": "cash-multiple",
+    "description": "Manage position exposure scale",
+    "params": { "percentage": 10 }
+  }
+]
