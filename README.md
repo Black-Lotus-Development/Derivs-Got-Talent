@@ -1,4 +1,4 @@
-# TradeCraft Arena
+# Deriv's Got Talent
 
 <p align="center">
   <strong>Build your strategy. Deploy your bots. Conquer the leaderboard.</strong>
@@ -16,12 +16,12 @@
 
 ## Overview
 
-**TradeCraft Arena** is a gamified trading strategy builder for the [Deriv](https://deriv.com) platform. It turns the complex world of algorithmic trading into an intuitive, game-like experience where users build, test, and deploy automated trading strategies.
+**Deriv's Got Talent** is a gamified trading strategy builder for the [Deriv](https://deriv.com) platform. It turns the complex world of algorithmic trading into an intuitive, game-like experience where users build, test, and deploy automated trading strategies.
 
 Built for the **Deriv's Got Talent** hackathon, this React Native app combines visual programming concepts with real-time market data integration.
 
 <p align="center">
-  <img src="assets/animations/Screenshot_20260207_135815_upscaled.jpeg" alt="TradeCraft Arena Screenshot" width="600"/>
+  <img src="assets/animations/Screenshot_20260207_135815_upscaled.jpeg" alt="Deriv's Got Talent Screenshot" width="600"/>
 </p>
 
 
@@ -149,7 +149,7 @@ src/
 
 ## Deriv Integration
 
-TradeCraft Arena integrates with Deriv's APIs:
+Deriv's Got Talent integrates with Deriv's APIs:
 
 - **WebSocket API** - Real-time tick data streaming
 - **Authentication** - OAuth2 token flow (optional)
