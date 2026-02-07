@@ -1,10 +1,6 @@
 # TradeCraft Arena
 
 <p align="center">
-  <img src="assets/splash-deriv-go.png" alt="TradeCraft Arena" width="200"/>
-</p>
-
-<p align="center">
   <strong>Build your strategy. Deploy your bots. Conquer the leaderboard.</strong>
 </p>
 
@@ -23,6 +19,11 @@
 **TradeCraft Arena** is a gamified trading strategy builder for the [Deriv](https://deriv.com) platform. It turns the complex world of algorithmic trading into an intuitive, game-like experience where users build, test, and deploy automated trading strategies.
 
 Built for the **Deriv's Got Talent** hackathon, this React Native app combines visual programming concepts with real-time market data integration.
+
+<p align="center">
+  <img src="assets/animations/Screenshot_20260207_135815_upscaled.jpeg" alt="TradeCraft Arena Screenshot" width="600"/>
+</p>
+
 
 ## Features
 
